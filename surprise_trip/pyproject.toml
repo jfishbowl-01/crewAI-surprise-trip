@@ -8,6 +8,8 @@ authors = ["Your Name <you@example.com>"]
 python = ">=3.10,<=3.13"
 crewai = {extras = ["tools"], version = "^0.130.0"}
 python-dotenv = "^1.0.0"
+fastapi = "^0.116.1"
+uvicorn = "^0.35.0"
 
 [tool.poetry.scripts]
 surprise_travel = "surprise_travel.main:run"
