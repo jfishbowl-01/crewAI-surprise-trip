@@ -6,9 +6,9 @@ from datetime import datetime
 # Load environment variables from .env file
 load_dotenv()
 
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
-from typing import Dict, Any, Optional, List
+from fastapi import FastAPI, HTTPException, Request
+from pydantic import BaseModel, Field
+from typing import Dict, Any, Optional, List, Union
 
 app = FastAPI(
     title="AI Travel Planning Team for watsonx Orchestrate",
@@ -16,63 +16,97 @@ app = FastAPI(
     version="1.0.0"
 )
 
-class TravelRequest(BaseModel):
-    origin: str
-    destination: str
-    age: str
-    interests: str
-    budget: str
-    dates: str
-    trip_duration: str
-    hotel_preference: str
+# Flexible model that handles any field names
+class FlexibleTravelRequest(BaseModel):
+    class Config:
+        extra = "allow"  # Allow any extra fields
 
-class TravelResponse(BaseModel):
-    success: bool
-    message: str
-    itinerary: Optional[Dict[str, Any]]
-    agents_used: Optional[List[str]]
-    error: Optional[str]
-
-def create_sample_itinerary(request: TravelRequest):
-    """Create a sample itinerary for demo purposes"""
-    return {
-        "name": f"{request.destination} {request.trip_duration} Itinerary",
-        "destination": request.destination,
-        "duration": request.trip_duration,
-        "budget": request.budget,
-        "day_plans": [
-            {
-                "date": "Day 1",
-                "activities": [
-                    {
-                        "name": f"Arrival in {request.destination}",
-                        "description": f"Welcome to {request.destination}! Start your adventure with a scenic tour of the area.",
-                        "type": "Arrival & Orientation",
-                        "rating": 4.8,
-                        "why_suitable": f"Perfect introduction to {request.destination} for someone interested in {request.interests}"
-                    }
-                ],
-                "restaurants": [f"Local {request.destination} Welcome Dinner"],
-                "accommodation": f"{request.hotel_preference.title()} Hotel in {request.destination}"
-            },
-            {
-                "date": "Day 2", 
-                "activities": [
-                    {
-                        "name": f"{request.interests.split(',')[0].strip().title()} Experience",
-                        "description": f"Immersive {request.interests.split(',')[0].strip()} experience tailored for age {request.age}",
-                        "type": "Main Interest Activity",
-                        "rating": 4.9,
-                        "why_suitable": f"Matches your interest in {request.interests.split(',')[0].strip()}"
-                    }
-                ],
-                "restaurants": [f"Highly-rated {request.destination} Restaurant"],
-                "accommodation": f"{request.hotel_preference.title()} Hotel"
-            }
-        ],
-        "total_estimated_cost": request.budget,
-        "created_by_agents": ["🎯 Activity Planner", "🍽️ Restaurant Scout", "📋 Itinerary Compiler"]
-    }
+# Accept any JSON and extract what we need
+@app.post("/plan-surprise-trip")
+async def plan_surprise_trip(request: Dict[str, Any]):
+    try:
+        # Extract fields flexibly - handle any field names
+        origin = request.get('origin') or request.get('from') or "Boston"
+        destination = request.get('destination') or request.get('to') or "Unknown"
+        age = str(request.get('age') or request.get('traveler_age') or "25")
+        interests = request.get('interests') or request.get('activities') or "general travel"
+        budget = request.get('budget') or request.get('cost') or "$2000"
+        dates = request.get('dates') or request.get('travel dates') or request.get('travel_dates') or "TBD"
+        duration = request.get('trip_duration') or request.get('duration') or request.get('trip duration') or "3 days"
+        hotel_pref = request.get('hotel_preference') or request.get('hotel preference') or request.get('accommodation') or "standard"
+        
+        # Create sample itinerary
+        itinerary = {
+            "name": f"{origin} to {destination} {duration} Itinerary",
+            "origin": origin,
+            "destination": destination,
+            "duration": duration,
+            "budget": budget,
+            "travel_dates": dates,
+            "day_plans": [
+                {
+                    "date": "Day 1",
+                    "activities": [
+                        {
+                            "name": f"Arrival in {destination}",
+                            "description": f"Welcome to {destination}! Start your adventure with a scenic tour of the area.",
+                            "type": "Arrival & Orientation",
+                            "rating": 4.8,
+                            "why_suitable": f"Perfect introduction to {destination} for someone age {age} interested in {interests}"
+                        }
+                    ],
+                    "restaurants": [f"Local {destination} Welcome Dinner"],
+                    "accommodation": f"{hotel_pref.title()} Hotel in {destination}"
+                },
+                {
+                    "date": "Day 2", 
+                    "activities": [
+                        {
+                            "name": f"{interests.split(',')[0].strip().title()} Experience",
+                            "description": f"Immersive {interests.split(',')[0].strip()} experience tailored for age {age}",
+                            "type": "Main Interest Activity",
+                            "rating": 4.9,
+                            "why_suitable": f"Matches your interest in {interests.split(',')[0].strip()}"
+                        }
+                    ],
+                    "restaurants": [f"Highly-rated {destination} Restaurant"],
+                    "accommodation": f"{hotel_pref.title()} Hotel"
+                },
+                {
+                    "date": "Day 3",
+                    "activities": [
+                        {
+                            "name": f"Final {destination} Experience",
+                            "description": f"Conclude your trip with a memorable experience in {destination}",
+                            "type": "Farewell Activity", 
+                            "rating": 4.7,
+                            "why_suitable": f"Perfect ending to your {destination} adventure"
+                        }
+                    ],
+                    "restaurants": [f"Farewell dinner at premium {destination} restaurant"],
+                    "accommodation": f"{hotel_pref.title()} Hotel"
+                }
+            ],
+            "total_estimated_cost": budget,
+            "created_by_agents": ["🎯 Activity Planner", "🍽️ Restaurant Scout", "📋 Itinerary Compiler"]
+        }
+        
+        return {
+            "success": True,
+            "message": f"✅ AI Travel Team created amazing {duration} itinerary for {destination}!",
+            "itinerary": itinerary,
+            "agents_used": ["🎯 Activity Planner", "🍽️ Restaurant Scout", "📋 Itinerary Compiler"],
+            "error": None
+        }
+        
+    except Exception as e:
+        return {
+            "success": False,
+            "message": "❌ AI Travel Team encountered an issue",
+            "itinerary": None,
+            "agents_used": None,
+            "error": str(e)
+        }
 
 @app.get("/")
 async def home():
@@ -99,68 +133,6 @@ async def health():
         "service": "AI Travel Planning Team",
         "agents_ready": True
     }
-
-@app.get("/agents")
-async def get_agents():
-    return {
-        "team": "AI Travel Planning Specialists",
-        "agents": [
-            {
-                "name": "Activity Planner",
-                "role": "🎯 Research and find unique activities and experiences",
-                "capabilities": [
-                    "Web search",
-                    "Event discovery", 
-                    "Cultural research",
-                    "Age-appropriate recommendations"
-                ]
-            },
-            {
-                "name": "Restaurant Scout", 
-                "role": "🍽️ Find highly-rated restaurants and dining experiences",
-                "capabilities": [
-                    "Restaurant reviews",
-                    "Cuisine analysis",
-                    "Local food discovery",
-                    "Scenic location scouting"
-                ]
-            },
-            {
-                "name": "Itinerary Compiler",
-                "role": "📋 Create comprehensive travel plans with logistics", 
-                "capabilities": [
-                    "Flight research",
-                    "Hotel recommendations",
-                    "Schedule optimization",
-                    "Day-by-day planning"
-                ]
-            }
-        ],
-        "collaboration": "All agents work together using real-time web search to create personalized surprise travel itineraries"
-    }
-
-@app.post("/plan-surprise-trip", response_model=TravelResponse)
-async def plan_surprise_trip(request: TravelRequest):
-    try:
-        # Create demo itinerary
-        itinerary = create_sample_itinerary(request)
-        
-        return TravelResponse(
-            success=True,
-            message=f"✅ AI Travel Team created amazing {request.trip_duration} itinerary for {request.destination}!",
-            itinerary=itinerary,
-            agents_used=["🎯 Activity Planner", "🍽️ Restaurant Scout", "📋 Itinerary Compiler"],
-            error=None
-        )
-        
-    except Exception as e:
-        return TravelResponse(
-            success=False,
-            message="❌ AI Travel Team encountered an issue",
-            itinerary=None,
-            agents_used=None,
-            error=str(e)
-        )
 
 if __name__ == "__main__":
     import uvicorn
