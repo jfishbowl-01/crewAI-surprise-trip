@@ -2,3 +2,4 @@ fastapi
 uvicorn
 crewai
 python-dotenv
+pydantic
