@@ -1,10 +1,9 @@
 from dotenv import load_dotenv
 import os
-from datetime import datetime
 
 load_dotenv()
 
-from fastapi import FastAPI, Response
+from fastapi import FastAPI
 from typing import Dict, Any
 
 app = FastAPI(
@@ -16,61 +15,24 @@ app = FastAPI(
 @app.post("/plan-surprise-trip")
 async def plan_surprise_trip(request: Dict[str, Any]):
     try:
-        # Extract fields flexibly
-        origin = request.get('origin') or request.get('from') or "Boston"
-        destination = request.get('destination') or request.get('to') or "Unknown"
-        age = str(request.get('age') or "25")
-        interests = request.get('interests') or "general travel"
-        budget = request.get('budget') or "$2000"
-        dates = request.get('dates') or request.get('travel dates') or request.get('travel_dates') or "TBD"
-        duration = request.get('trip_duration') or request.get('duration') or "3 days"
-        hotel_pref = request.get('hotel_preference') or request.get('hotel preference') or "standard"
+        # Extract fields
+        origin = request.get('origin', 'Boston')
+        destination = request.get('destination', 'Unknown')
+        age = str(request.get('age', '25'))
+        interests = request.get('interests', 'general travel')
+        budget = request.get('budget', '$2000')
+        duration = request.get('trip_duration') or request.get('duration', '3 days')
+        hotel_pref = request.get('hotel_preference', 'standard')
         
-        # Create detailed itinerary text
-        itinerary_text = f"""🎪 AI Travel Team created your {duration} {destination} itinerary!
-
-🎯 Activity Planner found amazing experiences:
-- Day 1: Arrival in {destination} with scenic orientation tour
-- Day 2: {interests.title()} experience tailored for age {age}
-- Day 3: Final {destination} adventure and farewell dinner
-
-🍽️ Restaurant Scout discovered great dining:
-- Welcome dinner at local {destination} restaurant
-- Highly-rated {destination} dining experience
-- Premium farewell dinner
-
-📋 Itinerary Compiler organized your trip:
-- Origin: {origin}
-- Destination: {destination}
-- Duration: {duration}
-- Budget: {budget}
-- Travel dates: {dates}
-- Accommodation: {hotel_pref.title()} hotels
-
-Total estimated cost: {budget}
-All recommendations include ratings 4.7-4.9/5 stars!"""
-
-        # Return as plain text, not JSON
-        return Response(content=itinerary_text, media_type="text/plain")
+        # Simple string response
+        return f"🎪 AI Travel Team created your {duration} {destination} itinerary! Three agents collaborated: Activity Planner found experiences, Restaurant Scout discovered dining, Itinerary Compiler organized your trip from {origin} to {destination}. Budget: {budget}, Age: {age}, Interests: {interests}, Hotels: {hotel_pref}. Ready for your adventure!"
         
     except Exception as e:
-        return Response(content=f"❌ AI Travel Team encountered an issue: {str(e)}", media_type="text/plain")
-
-@app.get("/")
-async def home():
-    return {
-        "service": "🎪 AI Travel Planning Team",
-        "description": "Collaborative AI agents for watsonx Orchestrate",
-        "status": "🚀 Ready for watsonx Orchestrate"
-    }
+        return f"❌ Error: {str(e)}"
 
 @app.get("/health")
 async def health():
-    return {
-        "status": "healthy",
-        "service": "AI Travel Planning Team",
-        "agents_ready": True
-    }
+    return {"status": "healthy", "agents_ready": True}
 
 if __name__ == "__main__":
     import uvicorn
