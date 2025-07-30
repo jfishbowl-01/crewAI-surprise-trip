@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+crewai
+crewai-tools
+python-dotenv
+pydantic
+ibm-watson-machine-learning
+langchain-ibm
