@@ -1,12 +1,11 @@
 from dotenv import load_dotenv
 import os
-import json
 from datetime import datetime
 
 load_dotenv()
 
-from fastapi import FastAPI, HTTPException, Request
-from typing import Dict, Any, Optional, List, Union
+from fastapi import FastAPI, Response
+from typing import Dict, Any
 
 app = FastAPI(
     title="AI Travel Planning Team for watsonx Orchestrate",
@@ -27,35 +26,35 @@ async def plan_surprise_trip(request: Dict[str, Any]):
         duration = request.get('trip_duration') or request.get('duration') or "3 days"
         hotel_pref = request.get('hotel_preference') or request.get('hotel preference') or "standard"
         
-        # Create detailed itinerary text for watsonx Orchestrate
+        # Create detailed itinerary text
         itinerary_text = f"""🎪 AI Travel Team created your {duration} {destination} itinerary!
 
 🎯 Activity Planner found amazing experiences:
-• Day 1: Arrival in {destination} with scenic orientation tour
-• Day 2: {interests.title()} experience tailored for age {age}
-• Day 3: Final {destination} adventure and farewell dinner
+- Day 1: Arrival in {destination} with scenic orientation tour
+- Day 2: {interests.title()} experience tailored for age {age}
+- Day 3: Final {destination} adventure and farewell dinner
 
 🍽️ Restaurant Scout discovered great dining:
-• Welcome dinner at local {destination} restaurant
-• Highly-rated {destination} dining experience
-• Premium farewell dinner
+- Welcome dinner at local {destination} restaurant
+- Highly-rated {destination} dining experience
+- Premium farewell dinner
 
 📋 Itinerary Compiler organized your trip:
-• Origin: {origin}
-• Destination: {destination}
-• Duration: {duration}
-• Budget: {budget}
-• Travel dates: {dates}
-• Accommodation: {hotel_pref.title()} hotels
+- Origin: {origin}
+- Destination: {destination}
+- Duration: {duration}
+- Budget: {budget}
+- Travel dates: {dates}
+- Accommodation: {hotel_pref.title()} hotels
 
 Total estimated cost: {budget}
 All recommendations include ratings 4.7-4.9/5 stars!"""
 
-        # Return plain text response that watsonx Orchestrate can handle
-        return itinerary_text
+        # Return as plain text, not JSON
+        return Response(content=itinerary_text, media_type="text/plain")
         
     except Exception as e:
-        return f"❌ AI Travel Team encountered an issue: {str(e)}"
+        return Response(content=f"❌ AI Travel Team encountered an issue: {str(e)}", media_type="text/plain")
 
 @app.get("/")
 async def home():
